@@ -114,9 +114,28 @@
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border outline-ring/50 overscroll-none;
   }
   body {
     @apply bg-background text-foreground;
+  }
+
+  [data-slot="button"],
+  [data-slot="dialog-trigger"],
+  [data-slot="select-trigger"],
+  [data-slot="context-menu-item"],
+  [data-slot="dropdown-menu-trigger"],
+  [data-slot="dropdown-menu-item"],
+  [data-slot="dropdown-menu-checkbox-item"],
+  [data-slot="command-item"],
+  [data-slot="toggle-group-item"],
+  [data-slot="popover-trigger"],
+  [data-slot="tooltip-trigger"],
+  [data-slot="sidebar-trigger"],
+  [data-slot="sidebar-menu-button"],
+  [data-slot="dialog-close"],
+  [data-slot="tabs-trigger"],
+  [data-slot="collapsible-trigger"] {
+    @apply cursor-pointer!;
   }
 }
