@@ -104,7 +104,7 @@ const RegisterForm = () => {
                 </Button>
               </div>
 
-              <FieldGroup>
+              <FieldGroup className="gap-4">
                 <Controller
                   name="email"
                   control={form.control}
