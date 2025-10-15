@@ -18,7 +18,7 @@ npx prisma studio
 
 Open [http://localhost:5555](http://localhost:5555) with your browser to see the prisma studio.
 
-Then start the inngest server:
+Then start the inngest dev server:
 
 ```bash
 npx inngest-cli@latest dev
