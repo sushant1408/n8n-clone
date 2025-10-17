@@ -198,6 +198,8 @@
     letter-spacing: var(--tracking-normal);
   }
 
+  button:not([disabled]),
+  [role="button"]:not([disabled]),
   [data-slot="button"],
   [data-slot="dialog-trigger"],
   [data-slot="select-trigger"],
