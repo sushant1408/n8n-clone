@@ -1,7 +1,13 @@
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, SearchIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 
 type EntityHeaderProps = {
   title: string;
@@ -79,4 +85,73 @@ const EntityContainer = ({
   );
 };
 
-export { EntityHeader, EntityContainer };
+type EntitySearchProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+};
+
+const EntitySearch = ({
+  value,
+  onChange,
+  placeholder = "Search...",
+}: EntitySearchProps) => {
+  return (
+    <div className="ml-auto">
+      <InputGroup>
+        <InputGroupInput
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+        />
+        <InputGroupAddon>
+          <SearchIcon />
+        </InputGroupAddon>
+      </InputGroup>
+    </div>
+  );
+};
+
+type EntityPaginationProps = {
+  page: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  disabled?: boolean;
+};
+
+const EntityPagination = ({
+  page,
+  totalPages,
+  onPageChange,
+  disabled,
+}: EntityPaginationProps) => {
+  return (
+    <div className="flex items-center justify-between gap-x-2 w-full">
+      <div className="flex-1 text-sm text-muted-foreground">
+        Page {page} of {totalPages || 1}
+      </div>
+      <div className="flex items-center justify-end py-4">
+        <ButtonGroup>
+          <Button
+            disabled={page === 1 || disabled}
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.max(1, page - 1))}
+          >
+            Previous
+          </Button>
+          <Button
+            disabled={page === totalPages || totalPages === 0 || disabled}
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.min(totalPages, page + 1))}
+          >
+            Next
+          </Button>
+        </ButtonGroup>
+      </div>
+    </div>
+  );
+};
+
+export { EntityContainer, EntityHeader, EntityPagination, EntitySearch };
