@@ -76,10 +76,46 @@ model Verification {
 }
 
 model Workflow {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @default(now()) @updatedAt
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String       @id @default(cuid())
+  name        String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @default(now()) @updatedAt
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nodes       Node[]
+  connections Connection[]
+}
+
+enum NodeType {
+  INITIAL
+}
+
+model Node {
+  id               String       @id @default(cuid())
+  name             String
+  type             NodeType
+  position         Json
+  data             Json         @default("{}")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @default(now()) @updatedAt
+  workflowId       String
+  workflow         Workflow     @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  outputConnection Connection[] @relation("FromNode")
+  inputConnection  Connection[] @relation("ToNode")
+}
+
+model Connection {
+  id         String   @id @default(cuid())
+  fromNodeId String
+  fromNode   Node     @relation("FromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNodeId   String
+  toNode     Node     @relation("ToNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+  fromOutput String   @default("main")
+  toInput    String   @default("main")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+  workflowId String
+  workflow   Workflow @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+
+  @@unique([fromNodeId, toNodeId, fromOutput, toInput])
 }
