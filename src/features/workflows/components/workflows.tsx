@@ -60,7 +60,7 @@ const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
       {dialog}
       <EntityHeader
         title="Workflows"
-        description="Create  and manage your workflows"
+        description="Create and manage your workflows"
         onNew={handleCreate}
         newButtonLabel="New workflow"
         disabled={disabled}

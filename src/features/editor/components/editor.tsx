@@ -61,6 +61,8 @@ const Editor = ({ workflowId }: { workflowId: string }) => {
         onConnect={onConnect}
         nodeTypes={nodeComponents}
         fitView
+        snapToGrid
+        snapGrid={[5, 5]}
       >
         <Background variant={BackgroundVariant.Dots} gap={12} size={1} />
         <Controls />
