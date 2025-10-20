@@ -1,4 +1,4 @@
-import type { Node, Edge } from "@xyflow/react";
+import type { Edge, Node } from "@xyflow/react";
 import { generateSlug } from "random-word-slugs";
 import z from "zod";
 
@@ -41,6 +41,74 @@ const workflowsRouter = createTRPCRouter({
       return prisma.workflow.update({
         where: { userId: ctx.auth.user.id, id: input.id },
         data: { name: input.name },
+      });
+    }),
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        nodes: z.array(
+          z.object({
+            id: z.string(),
+            type: z.string().nullish(),
+            position: z.object({ x: z.number(), y: z.number() }),
+            data: z.record(z.string(), z.any()).optional(),
+          })
+        ),
+        edges: z.array(
+          z.object({
+            source: z.string(),
+            target: z.string(),
+            sourceHandle: z.string().nullish(),
+            targetHandle: z.string().nullish(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, nodes, edges } = input;
+
+      const workflow = await prisma.workflow.findUniqueOrThrow({
+        where: { userId: ctx.auth.user.id, id: input.id },
+      });
+
+      // transaction to ensure consistency
+      return await prisma.$transaction(async (tx) => {
+        // delete existing nodes and connections (cascade deletes connections)
+        await tx.node.deleteMany({
+          where: { workflowId: id },
+        });
+
+        // create new nodes
+        await tx.node.createMany({
+          data: nodes.map((node) => ({
+            id: node.id,
+            workflowId: id,
+            name: node.type || "unknown",
+            type: node.type as NodeType,
+            position: node.position,
+            data: node.data || [],
+          })),
+        });
+
+        // create connections
+        await tx.connection.createMany({
+          data: edges.map((edge) => ({
+            workflowId: id,
+            fromNodeId: edge.source,
+            toNodeId: edge.target,
+            fromOutput: edge.sourceHandle || "main",
+            toInput: edge.targetHandle || "main",
+          })),
+        });
+
+        // update workflows's updateAt timestamp
+        await tx.workflow.update({
+          where: { id },
+          data: { updatedAt: new Date() },
+        });
+
+        return workflow;
       });
     }),
   getOne: protectedProcedure

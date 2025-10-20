@@ -224,3 +224,8 @@
 .react-flow__node.selected #base-node {
   @apply ring-3 ring-muted-foreground/25 shadow-lg;
 }
+
+.react-flow__selection.react-flow__container,
+.react-flow__nodesselection-rect {
+  @apply bg-primary/8! border-dashed! border-primary!;
+}

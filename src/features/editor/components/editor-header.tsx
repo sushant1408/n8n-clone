@@ -1,5 +1,6 @@
 "use client";
 
+import { useAtomValue } from "jotai";
 import { SaveIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -14,10 +15,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
+import { editorAtom } from "@/features/editor/store/atoms";
 import {
   useSuspenseWorkflow,
+  useUpdateWorkflow,
   useUpdateWorkflowName,
 } from "@/features/workflows/hooks/use-workflows";
+import { Spinner } from "@/components/ui/spinner";
 
 const EditorNameInput = ({ workflowId }: { workflowId: string }) => {
   const { data } = useSuspenseWorkflow(workflowId);
@@ -108,11 +112,26 @@ const EditorBreadcrumbs = ({ workflowId }: { workflowId: string }) => {
 };
 
 const EditorSaveButton = ({ workflowId }: { workflowId: string }) => {
+  const editor = useAtomValue(editorAtom);
+
+  const { mutate, isPending } = useUpdateWorkflow();
+
+  const handleSave = () => {
+    if (!editor) {
+      return;
+    }
+
+    const nodes = editor.getNodes();
+    const edges = editor.getEdges();
+
+    mutate({ id: workflowId, nodes, edges });
+  };
+
   return (
     <div className="ml-auto">
-      <Button size="sm" onClick={() => {}} disabled={false}>
-        <SaveIcon />
-        Save
+      <Button size="sm" onClick={handleSave} disabled={isPending}>
+        {isPending ? <Spinner /> : <SaveIcon />}
+        {isPending ? "Saving..." : "Save"}
       </Button>
     </div>
   );
