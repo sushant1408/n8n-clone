@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { ButtonGroup } from "@/components/ui/button-group";
 
 const EditorControls = ({
   isEditorInteractive,
@@ -31,7 +30,7 @@ const EditorControls = ({
   const { zoomIn, zoomOut, fitView } = useReactFlow();
 
   return (
-    <ButtonGroup orientation="vertical" className="h-fit">
+    <div className="flex items-center gap-x-2">
       <Button
         size="icon"
         variant="outline"
@@ -69,7 +68,7 @@ const EditorControls = ({
       >
         {isEditorInteractive ? <LockKeyholeOpenIcon /> : <LockKeyholeIcon />}
       </Button>
-    </ButtonGroup>
+    </div>
   );
 };
 

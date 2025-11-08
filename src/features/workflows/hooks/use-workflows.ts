@@ -117,6 +117,24 @@ const useUpdateWorkflow = () => {
   );
 };
 
+/**
+ * hook to execute a workflow
+ */
+const useExecuteWorkflow = () => {
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.workflows.execute.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Workflow "${data.name}" executed`);
+      },
+      onError: (error) => {
+        toast.error(`Failed to execute workflow: ${error.message}`);
+      },
+    })
+  );
+};
+
 export {
   useCreateWorkflow,
   useSuspenseWorkflows,
@@ -124,4 +142,5 @@ export {
   useSuspenseWorkflow,
   useUpdateWorkflowName,
   useUpdateWorkflow,
+  useExecuteWorkflow,
 };

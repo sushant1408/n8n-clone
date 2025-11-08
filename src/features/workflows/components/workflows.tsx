@@ -1,8 +1,11 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { formatDistanceToNow } from "date-fns";
 import { WorkflowIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Controller, useForm } from "react-hook-form";
+import { z } from "zod";
 
 import {
   EmptyView,
@@ -15,6 +18,10 @@ import {
   ErrorView,
   LoadingView,
 } from "@/components/entity-components";
+import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
 import {
   useCreateWorkflow,
   useRemoveWorkflow,
@@ -22,8 +29,87 @@ import {
 } from "@/features/workflows/hooks/use-workflows";
 import { useWorkflowsParams } from "@/features/workflows/hooks/use-workflows-params";
 import type { Workflow } from "@/generated/prisma";
+import { useCreateWorkflowDialog } from "@/hooks/use-create-workflow-dialog";
 import { useEntitySearch } from "@/hooks/use-entity-search";
 import { useUpgradeDialog } from "@/hooks/use-upgrade-dialog";
+
+const createWorkflowSchema = z.object({
+  name: z.string().min(1, { error: "Workflow name is required" }),
+});
+
+export type CreateWorkflowFormValues = z.infer<typeof createWorkflowSchema>;
+
+const CreateWorkflowForm = ({ onCancel }: { onCancel?: () => void }) => {
+  const form = useForm<CreateWorkflowFormValues>({
+    resolver: zodResolver(createWorkflowSchema),
+    defaultValues: {
+      name: "",
+    },
+  });
+
+  const router = useRouter();
+
+  const { mutate, isPending } = useCreateWorkflow();
+  const { handleError, dialog } = useUpgradeDialog();
+
+  const handleCreate = (values: CreateWorkflowFormValues) => {
+    mutate(
+      { name: values.name },
+      {
+        onSuccess: (data) => {
+          router.push(`/workflows/${data.id}`);
+          onCancel?.();
+        },
+        onError: (error) => {
+          handleError(error);
+        },
+      }
+    );
+  };
+
+  return (
+    <>
+      {dialog}
+      <div className="space-y-4">
+        <form id="create-workflow" onSubmit={form.handleSubmit(handleCreate)}>
+          <Controller
+            name="name"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid} className="gap-2">
+                <FieldLabel htmlFor="create-workflow-name">Name</FieldLabel>
+                <Input
+                  {...field}
+                  id="create-workflow-name"
+                  aria-invalid={fieldState.invalid}
+                  placeholder="AI Summarizer"
+                  autoCapitalize="off"
+                  autoCorrect="off"
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+        </form>
+        <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+          <Button
+            variant="outline"
+            disabled={isPending}
+            onClick={() => onCancel?.()}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="create-workflow" disabled={isPending}>
+            {isPending && <Spinner />}
+            {isPending ? "Creating..." : "Create"}
+          </Button>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const WorkflowsList = () => {
   const workflows = useSuspenseWorkflows();
@@ -39,21 +125,7 @@ const WorkflowsList = () => {
 };
 
 const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
-  const router = useRouter();
-
-  const { mutate, isPending } = useCreateWorkflow();
-  const { handleError, dialog } = useUpgradeDialog();
-
-  const handleCreate = () => {
-    mutate(undefined, {
-      onSuccess: (data) => {
-        router.push(`/workflows/${data.id}`);
-      },
-      onError: (error) => {
-        handleError(error);
-      },
-    });
-  };
+  const { handleOpen, dialog } = useCreateWorkflowDialog();
 
   return (
     <>
@@ -61,10 +133,10 @@ const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
       <EntityHeader
         title="Workflows"
         description="Create and manage your workflows"
-        onNew={handleCreate}
+        onNew={() => handleOpen(true)}
         newButtonLabel="New workflow"
         disabled={disabled}
-        isCreating={isPending}
+        isCreating={false}
       />
     </>
   );
@@ -121,29 +193,15 @@ const WorkflowsError = () => {
 };
 
 const WorkflowsEmpty = () => {
-  const router = useRouter();
-
-  const { mutate, isPending } = useCreateWorkflow();
-  const { handleError, dialog } = useUpgradeDialog();
-
-  const handleCreate = () => {
-    mutate(undefined, {
-      onSuccess: (data) => {
-        router.push(`/workflows/${data.id}`);
-      },
-      onError: (error) => {
-        handleError(error);
-      },
-    });
-  };
+  const { handleOpen, dialog } = useCreateWorkflowDialog();
 
   return (
     <>
       {dialog}
       <EmptyView
         message="You haven't created any workflows yet. Get started by creating your first workflow"
-        onNew={handleCreate}
-        isCreating={isPending}
+        onNew={() => handleOpen(true)}
+        isCreating={false}
         emptyButtonLabel="Add workflow"
         emptyTitle="No workflows"
       />
@@ -181,6 +239,7 @@ const WorkflowItem = ({ data }: { data: Workflow }) => {
 };
 
 export {
+  CreateWorkflowForm,
   WorkflowsContainer,
   WorkflowsEmpty,
   WorkflowsError,

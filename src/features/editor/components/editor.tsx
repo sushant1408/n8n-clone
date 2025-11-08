@@ -18,17 +18,19 @@ import {
   ReactFlow,
 } from "@xyflow/react";
 import { useSetAtom } from "jotai";
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { ErrorView, LoadingView } from "@/components/entity-components";
 import { nodeComponents } from "@/config/node-components";
 import { AddNodeButton } from "@/features/editor/components/add-node-button";
 import { editorAtom } from "@/features/editor/store/atoms";
 import { useSuspenseWorkflow } from "@/features/workflows/hooks/use-workflows";
+import { NodeType } from "@/generated/prisma";
+import { EditorControls } from "./editor-controls";
+import { ExecuteWorkflowButton } from "./execute-workflow-button";
 
 import "@xyflow/react/dist/style.css";
-import { toast } from "sonner";
-import { EditorControls } from "./editor-controls";
 
 const Editor = ({ workflowId }: { workflowId: string }) => {
   const { data } = useSuspenseWorkflow(workflowId);
@@ -84,6 +86,10 @@ const Editor = ({ workflowId }: { workflowId: string }) => {
     [nodes, isEditorInteractive]
   );
 
+  const hasManualTrigger = useMemo(() => {
+    return nodes.some((node) => node.type === NodeType.MANUAL_TRIGGER);
+  }, [nodes]);
+
   return (
     <div className="size-full">
       <ReactFlow
@@ -120,6 +126,11 @@ const Editor = ({ workflowId }: { workflowId: string }) => {
         <Panel position="top-right">
           <AddNodeButton />
         </Panel>
+        {hasManualTrigger && (
+          <Panel position="bottom-center">
+            <ExecuteWorkflowButton workflowId={workflowId} />
+          </Panel>
+        )}
       </ReactFlow>
     </div>
   );
