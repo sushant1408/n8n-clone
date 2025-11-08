@@ -1,9 +1,9 @@
 import type { Edge, Node } from "@xyflow/react";
-import { generateSlug } from "random-word-slugs";
 import z from "zod";
 
 import { PAGINATION } from "@/config/constants";
 import { NodeType } from "@/generated/prisma";
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import {
   createTRPCRouter,
@@ -12,22 +12,41 @@ import {
 } from "@/trpc/init";
 
 const workflowsRouter = createTRPCRouter({
-  create: premiumProcedure.mutation(({ ctx }) => {
-    // TODO: get name from user and remove "random-word-slugs"
-    return prisma.workflow.create({
-      data: {
-        name: generateSlug(3),
-        userId: ctx.auth.user.id,
-        nodes: {
-          create: {
-            type: NodeType.INITIAL,
-            position: { x: 0, y: 0 },
-            name: NodeType.INITIAL,
+  execute: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      const workflow = await prisma.workflow.findUniqueOrThrow({
+        where: { userId: ctx.auth.user.id, id: input.id },
+      });
+
+      await inngest.send({
+        name: "workflows/execute.workflow",
+        data: { workflowId: input.id },
+      });
+
+      return workflow;
+    }),
+  create: premiumProcedure
+    .input(
+      z.object({
+        name: z.string().min(1, { error: "Workflow name is required" }),
+      })
+    )
+    .mutation(({ input, ctx }) => {
+      return prisma.workflow.create({
+        data: {
+          name: input.name,
+          userId: ctx.auth.user.id,
+          nodes: {
+            create: {
+              type: NodeType.INITIAL,
+              position: { x: 0, y: 0 },
+              name: NodeType.INITIAL,
+            },
           },
         },
-      },
-    });
-  }),
+      });
+    }),
   remove: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(({ ctx, input }) => {

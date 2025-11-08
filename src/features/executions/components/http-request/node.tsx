@@ -5,13 +5,12 @@ import { GlobeIcon } from "lucide-react";
 import { memo, useState } from "react";
 
 import { BaseExecutionNode } from "@/features/executions/components/base-execution-node";
-import { type FormValues, HttpRequestDialog } from "./dialog";
+import { HttpRequestDialog, type HttpRequestFormValues } from "./dialog";
 
 type HttpRequestNodeData = {
   endpoint?: string;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: string;
-  [key: string]: unknown;
 };
 
 type HttpRequestNodeType = Node<HttpRequestNodeData>;
@@ -31,7 +30,7 @@ const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (values: FormValues) => {
+  const handleSubmit = (values: HttpRequestFormValues) => {
     setNodes((currentNodes) =>
       currentNodes.map((node) => {
         if (node.id === props.id) {
@@ -39,9 +38,7 @@ const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
             ...node,
             data: {
               ...node.data,
-              endpoint: values.endpoint,
-              method: values.method,
-              body: values.body,
+              ...values,
             },
           };
         }
@@ -57,11 +54,7 @@ const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSubmit={handleSubmit}
-        initialValues={{
-          endpoint: nodeData.endpoint,
-          method: nodeData.method,
-          body: nodeData.body,
-        }}
+        initialValues={nodeData}
       />
       <BaseExecutionNode
         {...props}
