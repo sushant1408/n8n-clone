@@ -32,6 +32,13 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
+  variableName: z
+    .string()
+    .min(1, { error: "Variable name is required" })
+    .regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/, {
+      error:
+        "Variable name must start with a letter or underscore and contains only letters, numbers, and underscores",
+    }),
   endpoint: z.url({ error: "Please enter a valid URL" }),
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
   body: z.string().optional(),
@@ -54,6 +61,7 @@ const HttpRequestDialog = ({
     endpoint: "",
     method: "GET",
     body: "",
+    variableName: "",
   },
 }: HttpRequestDialogProps) => {
   const form = useForm<HttpRequestFormValues>({
@@ -68,6 +76,7 @@ const HttpRequestDialog = ({
     }
   }, [open, initialValues, form]);
 
+  const watchVariableName = form.watch("variableName") || "myApiCall";
   const watchMethod = form.watch("method");
   const showBodyField = ["POST", "PUT", "PATCH"].includes(watchMethod);
 
@@ -91,6 +100,25 @@ const HttpRequestDialog = ({
           onSubmit={form.handleSubmit(handleSubmit)}
         >
           <FieldGroup className="gap-4">
+            <Controller
+              name="variableName"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-http-request-endpoint-input">
+                    Variable name
+                  </FieldLabel>
+                  <Input placeholder="myApiCall" {...field} />
+                  <FieldDescription>
+                    Use this name to reference the result in other nodes:{" "}
+                    {`{{${watchVariableName}.httpResponse.data}}`}
+                  </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
             <Controller
               name="method"
               control={form.control}

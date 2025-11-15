@@ -8,6 +8,7 @@ import { BaseExecutionNode } from "@/features/executions/components/base-executi
 import { HttpRequestDialog, type HttpRequestFormValues } from "./dialog";
 
 type HttpRequestNodeData = {
+  variableName?: string;
   endpoint?: string;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: string;
