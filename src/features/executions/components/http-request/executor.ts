@@ -1,12 +1,21 @@
+import Handlebars from "handlebars";
 import { NonRetriableError } from "inngest";
 import type { Options as KyOptions } from "ky";
 import ky from "ky";
 
 import type { NodeExecutor } from "@/features/executions/types";
 
+Handlebars.registerHelper("json", (context) => {
+  const stringified = JSON.stringify(context, null, 2);
+  const safeString = new Handlebars.SafeString(stringified);
+  
+  return safeString;
+});
+
 type HttpRequestData = {
-  endpoint?: string;
-  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  variableName: string;
+  endpoint: string;
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: string;
 };
 
@@ -21,16 +30,32 @@ const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
     throw new NonRetriableError("HTTP Request node: no endpoint configured");
   }
 
+  if (!data.variableName) {
+    // publish "error" state for httpRequest
+    throw new NonRetriableError(
+      "HTTP Request node: variable name not configured"
+    );
+  }
+
+  if (!data.method) {
+    // publish "error" state for httpRequest
+    throw new NonRetriableError("HTTP Request node: method not configured");
+  }
+
   const result = await step.run("http-request", async () => {
-    const endpoint = data.endpoint!;
-    const method = data.method || "GET";
+    const endpoint = Handlebars.compile(data.endpoint)(context);
+    const method = data.method;
 
     const options: KyOptions = { method };
 
     if (["POST", "PUT", "PATCH"].includes(method)) {
-      if (data.body) {
-        options.body = data.body;
-      }
+      const resolved = Handlebars.compile(data.body || "{}")(context);
+      JSON.parse(resolved);
+
+      options.body = resolved;
+      options.headers = {
+        "Content-Type": "application/json",
+      };
     }
 
     const response = await ky(endpoint, options);
@@ -39,13 +64,17 @@ const httpRequestExecutor: NodeExecutor<HttpRequestData> = async ({
       ? await response.json()
       : await response.text();
 
-    return {
-      ...context,
+    const responsePayload = {
       httpResponse: {
         status: response.status,
         statusText: response.statusText,
         data: responseData,
       },
+    };
+
+    return {
+      ...context,
+      [data.variableName]: responsePayload,
     };
   });
 
