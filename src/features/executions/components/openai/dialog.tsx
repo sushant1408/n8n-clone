@@ -31,6 +31,45 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+export const AVAILABLE_MODELS = [
+  "chatgpt-4o-latest",
+  "gpt-3.5-turbo",
+  "gpt-3.5-turbo-0125",
+  "gpt-3.5-turbo-1106",
+  "gpt-4",
+  "gpt-4-0613",
+  "gpt-4-turbo",
+  "gpt-4-turbo-2024-04-09",
+  "gpt-4.1",
+  "gpt-4.1-2025-04-14",
+  "gpt-4.1-mini",
+  "gpt-4.1-mini-2025-04-14",
+  "gpt-4.1-nano",
+  "gpt-4.1-nano-2025-04-14",
+  "gpt-4o",
+  "gpt-40-2024-05-13",
+  "gpt-40-2024-08-06",
+  "gpt-40-2024-11-20",
+  "gpt-4o-mini",
+  "gpt-4o-mini-2024-07-18",
+  "gpt-5",
+  "gpt-5-2025-08-07",
+  "gpt-5-chat-latest",
+  "gpt-5-codex",
+  "gpt-5-mini",
+  "gpt-5-mini-2025-08-07",
+  "gpt-5-nano",
+  "gpt-5-nano-2025-08-07",
+  "gpt-5-pro",
+  "gpt-5-pro-2025-10-06",
+  "o1",
+  "o1-2024-12-17",
+  "o3",
+  "o3-2025-04-16",
+  "o3-mini",
+  "o3-mini-2025-01-31",
+] as const;
+
 const formSchema = z.object({
   variableName: z
     .string()
@@ -39,32 +78,32 @@ const formSchema = z.object({
       error:
         "Variable name must start with a letter or underscore and contains only letters, numbers, and underscores",
     }),
-  endpoint: z.string().min(1, { error: "Please enter a valid URL" }),
-  method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
-  body: z.string().optional(),
+  model: z.enum(AVAILABLE_MODELS),
+  systemPrompt: z.string().optional(),
+  userPrompt: z.string().min(1, { error: "User prompt is required" }),
 });
 
-export type HttpRequestFormValues = z.infer<typeof formSchema>;
+export type OpenAiFormValues = z.infer<typeof formSchema>;
 
-interface HttpRequestDialogProps {
+interface OpenAiDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (value: HttpRequestFormValues) => void;
-  initialValues?: Partial<HttpRequestFormValues>;
+  onSubmit: (value: OpenAiFormValues) => void;
+  initialValues?: Partial<OpenAiFormValues>;
 }
 
-const HttpRequestDialog = ({
+const OpenAiDialog = ({
   open,
   onOpenChange,
   onSubmit,
   initialValues = {
-    endpoint: "",
-    method: "GET",
-    body: "",
+    model: AVAILABLE_MODELS[0],
+    systemPrompt: "",
+    userPrompt: "",
     variableName: "",
   },
-}: HttpRequestDialogProps) => {
-  const form = useForm<HttpRequestFormValues>({
+}: OpenAiDialogProps) => {
+  const form = useForm<OpenAiFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   });
@@ -76,11 +115,9 @@ const HttpRequestDialog = ({
     }
   }, [open, initialValues, form]);
 
-  const watchVariableName = form.watch("variableName") || "myApiCall";
-  const watchMethod = form.watch("method");
-  const showBodyField = ["POST", "PUT", "PATCH"].includes(watchMethod);
+  const watchVariableName = form.watch("variableName") || "myOpenAi";
 
-  const handleSubmit = (values: HttpRequestFormValues) => {
+  const handleSubmit = (values: OpenAiFormValues) => {
     onSubmit(values);
     onOpenChange(false);
   };
@@ -89,13 +126,13 @@ const HttpRequestDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>HTTP Request</DialogTitle>
+          <DialogTitle>Open AI Configuration</DialogTitle>
           <DialogDescription>
-            Configure settings for the HTTP Request node.
+            Configure the AI model and prompts for this node.
           </DialogDescription>
         </DialogHeader>
         <form
-          id="form-http-request"
+          id="form-openai"
           className="space-y-8 mt-4"
           onSubmit={form.handleSubmit(handleSubmit)}
         >
@@ -105,13 +142,13 @@ const HttpRequestDialog = ({
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-http-request-variable-name-input">
+                  <FieldLabel htmlFor="form-openai-variable-name-input">
                     Variable name
                   </FieldLabel>
-                  <Input placeholder="myApiCall" {...field} />
+                  <Input placeholder="myOpenAi" {...field} />
                   <FieldDescription>
                     Use this name to reference the result in other nodes:{" "}
-                    {`{{${watchVariableName}.httpResponse.data}}`}
+                    {`{{${watchVariableName}.aiResponse}}`}
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -120,12 +157,12 @@ const HttpRequestDialog = ({
               )}
             />
             <Controller
-              name="method"
+              name="model"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-http-request-select-method">
-                    Method
+                  <FieldLabel htmlFor="form-openai-select-model">
+                    Model
                   </FieldLabel>
                   <Select
                     name={field.name}
@@ -133,22 +170,22 @@ const HttpRequestDialog = ({
                     value={field.value}
                   >
                     <SelectTrigger
-                      id="form-http-request-select-method"
+                      id="form-openai-select-model"
                       aria-invalid={fieldState.invalid}
                       className="w-full"
                     >
-                      <SelectValue placeholder="Select a method" />
+                      <SelectValue placeholder="Select a model" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="GET">GET</SelectItem>
-                      <SelectItem value="POST">POST</SelectItem>
-                      <SelectItem value="PUT">PUT</SelectItem>
-                      <SelectItem value="PATCH">PATCH</SelectItem>
-                      <SelectItem value="DELETE">DELETE</SelectItem>
+                      {AVAILABLE_MODELS.map((model) => (
+                        <SelectItem value={model} key={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FieldDescription>
-                    The HTTP method to use for this request
+                    The Open AI model to use for completion
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -157,20 +194,22 @@ const HttpRequestDialog = ({
               )}
             />
             <Controller
-              name="endpoint"
+              name="systemPrompt"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-http-request-endpoint-input">
-                    Endpoint URL
+                  <FieldLabel htmlFor="form-openai-system-prompt-textarea">
+                    System Prompt (optional)
                   </FieldLabel>
-                  <Input
-                    placeholder="https://api.example.com/users/{{httpResponse.data.id}}"
+                  <Textarea
+                    className="min-h-[80px] font-mono text-sm"
+                    placeholder="You are a helpful assistant"
                     {...field}
                   />
                   <FieldDescription>
-                    Static URL or use {"{{variables}}"} for simple values or{" "}
-                    {"{{json variables}}"} to stringify objects
+                    Sets the behavior of the assistant. Use {"{{variables}}"}{" "}
+                    for simple values or {"{{json variables}}"} to stringify
+                    objects
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -178,39 +217,34 @@ const HttpRequestDialog = ({
                 </Field>
               )}
             />
-            {showBodyField && (
-              <Controller
-                name="body"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-http-request-body-textarea">
-                      Request Body
-                    </FieldLabel>
-                    <Textarea
-                      className="min-h-[120px] font-mono text-sm"
-                      placeholder={
-                        '{\n  "userId": "{{httpResponse.data.id}}",\n  "name": "{{httpResponse.data.name}}",\n  "items": "{{httpResponse.data.items}}"\n}'
-                      }
-                      {...field}
-                    />
-                    <FieldDescription>
-                      JSON with template variables. Use {"{{variables}}"} for
-                      simple values or {"{{json variables}}"} to stringify
-                      objects
-                    </FieldDescription>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            )}
+            <Controller
+              name="userPrompt"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-openai-user-prompt-textarea">
+                    User Prompt
+                  </FieldLabel>
+                  <Textarea
+                    className="min-h-[120px] font-mono text-sm"
+                    placeholder="Summarize this text: {{json httpResponse.data}}"
+                    {...field}
+                  />
+                  <FieldDescription>
+                    The prompt to send to the AI. Use {"{{variables}}"} for
+                    simple values or {"{{json variables}}"} to stringify objects
+                  </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
           </FieldGroup>
         </form>
         <Field orientation="horizontal">
           <DialogFooter className="mt-4 w-full">
-            <Button type="submit" form="form-http-request">
+            <Button type="submit" form="form-openai">
               Save
             </Button>
           </DialogFooter>
@@ -220,4 +254,4 @@ const HttpRequestDialog = ({
   );
 };
 
-export { HttpRequestDialog };
+export { OpenAiDialog };
