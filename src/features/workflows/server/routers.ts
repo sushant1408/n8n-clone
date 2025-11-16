@@ -3,7 +3,7 @@ import z from "zod";
 
 import { PAGINATION } from "@/config/constants";
 import { NodeType } from "@/generated/prisma";
-import { inngest } from "@/inngest/client";
+import { sendWorkflowExecution } from "@/inngest/utils";
 import prisma from "@/lib/db";
 import {
   createTRPCRouter,
@@ -19,10 +19,7 @@ const workflowsRouter = createTRPCRouter({
         where: { userId: ctx.auth.user.id, id: input.id },
       });
 
-      await inngest.send({
-        name: "workflows/execute.workflow",
-        data: { workflowId: input.id },
-      });
+      await sendWorkflowExecution({ workflowId: input.id });
 
       return workflow;
     }),
