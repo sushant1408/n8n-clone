@@ -4,6 +4,7 @@ import { getExecutor } from "@/features/executions/lib/executor-registry";
 import { googleFormTriggerChannel } from "@/inngest/channels/google-form-trigger";
 import { httpRequestChannel } from "@/inngest/channels/http-request";
 import { manualTriggerChannel } from "@/inngest/channels/manual-trigger";
+import { stripeTriggerChannel } from "@/inngest/channels/stripe-trigger";
 import { inngest } from "@/inngest/client";
 import { topologicalSort } from "@/inngest/utils";
 import prisma from "@/lib/db";
@@ -16,6 +17,7 @@ export const executeWorkflow = inngest.createFunction(
       httpRequestChannel(),
       manualTriggerChannel(),
       googleFormTriggerChannel(),
+      stripeTriggerChannel(),
     ],
   },
   async ({ event, step, publish }) => {
