@@ -31,6 +31,22 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+export const AVAILABLE_MODELS = [
+  "claude-3-5-haiku-20241022",
+  "claude-3-5-haiku-latest",
+  "claude-3-7-sonnet-20250219",
+  "claude-3-7-sonnet-latest",
+  "claude-3-haiku-20240307",
+  "claude-opus-4-0",
+  "claude-opus-4-1",
+  "claude-opus-4-1-20250805",
+  "claude-opus-4-20250514",
+  "claude-sonnet-4-0",
+  "claude-sonnet-4-20250514",
+  "claude-sonnet-4-5",
+  "claude-sonnet-4-5-20250929",
+] as const;
+
 const formSchema = z.object({
   variableName: z
     .string()
@@ -39,32 +55,32 @@ const formSchema = z.object({
       error:
         "Variable name must start with a letter or underscore and contains only letters, numbers, and underscores",
     }),
-  endpoint: z.string().min(1, { error: "Please enter a valid URL" }),
-  method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
-  body: z.string().optional(),
+  model: z.enum(AVAILABLE_MODELS),
+  systemPrompt: z.string().optional(),
+  userPrompt: z.string().min(1, { error: "User prompt is required" }),
 });
 
-export type HttpRequestFormValues = z.infer<typeof formSchema>;
+export type AnthropicFormValues = z.infer<typeof formSchema>;
 
-interface HttpRequestDialogProps {
+interface AnthropicDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (value: HttpRequestFormValues) => void;
-  initialValues?: Partial<HttpRequestFormValues>;
+  onSubmit: (value: AnthropicFormValues) => void;
+  initialValues?: Partial<AnthropicFormValues>;
 }
 
-const HttpRequestDialog = ({
+const AnthropicDialog = ({
   open,
   onOpenChange,
   onSubmit,
   initialValues = {
-    endpoint: "",
-    method: "GET",
-    body: "",
+    model: AVAILABLE_MODELS[0],
+    systemPrompt: "",
+    userPrompt: "",
     variableName: "",
   },
-}: HttpRequestDialogProps) => {
-  const form = useForm<HttpRequestFormValues>({
+}: AnthropicDialogProps) => {
+  const form = useForm<AnthropicFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   });
@@ -76,11 +92,9 @@ const HttpRequestDialog = ({
     }
   }, [open, initialValues, form]);
 
-  const watchVariableName = form.watch("variableName") || "myApiCall";
-  const watchMethod = form.watch("method");
-  const showBodyField = ["POST", "PUT", "PATCH"].includes(watchMethod);
+  const watchVariableName = form.watch("variableName") || "myAnthropic";
 
-  const handleSubmit = (values: HttpRequestFormValues) => {
+  const handleSubmit = (values: AnthropicFormValues) => {
     onSubmit(values);
     onOpenChange(false);
   };
@@ -89,13 +103,13 @@ const HttpRequestDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>HTTP Request</DialogTitle>
+          <DialogTitle>Anthropic Configuration</DialogTitle>
           <DialogDescription>
-            Configure settings for the HTTP Request node.
+            Configure the AI model and prompts for this node.
           </DialogDescription>
         </DialogHeader>
         <form
-          id="form-http-request"
+          id="form-anthropic"
           className="space-y-8 mt-4"
           onSubmit={form.handleSubmit(handleSubmit)}
         >
@@ -105,13 +119,13 @@ const HttpRequestDialog = ({
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-http-request-variable-name-input">
+                  <FieldLabel htmlFor="form-anthropic-variable-name-input">
                     Variable name
                   </FieldLabel>
-                  <Input placeholder="myApiCall" {...field} />
+                  <Input placeholder="myAnthropic" {...field} />
                   <FieldDescription>
                     Use this name to reference the result in other nodes:{" "}
-                    {`{{${watchVariableName}.httpResponse.data}}`}
+                    {`{{${watchVariableName}.aiResponse}}`}
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -120,12 +134,12 @@ const HttpRequestDialog = ({
               )}
             />
             <Controller
-              name="method"
+              name="model"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-http-request-select-method">
-                    Method
+                  <FieldLabel htmlFor="form-anthropic-select-model">
+                    Model
                   </FieldLabel>
                   <Select
                     name={field.name}
@@ -133,22 +147,22 @@ const HttpRequestDialog = ({
                     value={field.value}
                   >
                     <SelectTrigger
-                      id="form-http-request-select-method"
+                      id="form-anthropic-select-model"
                       aria-invalid={fieldState.invalid}
                       className="w-full"
                     >
-                      <SelectValue placeholder="Select a method" />
+                      <SelectValue placeholder="Select a model" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="GET">GET</SelectItem>
-                      <SelectItem value="POST">POST</SelectItem>
-                      <SelectItem value="PUT">PUT</SelectItem>
-                      <SelectItem value="PATCH">PATCH</SelectItem>
-                      <SelectItem value="DELETE">DELETE</SelectItem>
+                      {AVAILABLE_MODELS.map((model) => (
+                        <SelectItem value={model} key={model}>
+                          {model}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FieldDescription>
-                    The HTTP method to use for this request
+                    The Google Gemini model to use for completion
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -157,20 +171,22 @@ const HttpRequestDialog = ({
               )}
             />
             <Controller
-              name="endpoint"
+              name="systemPrompt"
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-http-request-endpoint-input">
-                    Endpoint URL
+                  <FieldLabel htmlFor="form-anthropic-system-prompt-textarea">
+                    System Prompt (optional)
                   </FieldLabel>
-                  <Input
-                    placeholder="https://api.example.com/users/{{httpResponse.data.id}}"
+                  <Textarea
+                    className="min-h-[80px] font-mono text-sm"
+                    placeholder="You are a helpful assistant"
                     {...field}
                   />
                   <FieldDescription>
-                    Static URL or use {"{{variables}}"} for simple values or{" "}
-                    {"{{json variables}}"} to stringify objects
+                    Sets the behavior of the assistant. Use {"{{variables}}"}{" "}
+                    for simple values or {"{{json variables}}"} to stringify
+                    objects
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -178,39 +194,34 @@ const HttpRequestDialog = ({
                 </Field>
               )}
             />
-            {showBodyField && (
-              <Controller
-                name="body"
-                control={form.control}
-                render={({ field, fieldState }) => (
-                  <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor="form-http-request-body-textarea">
-                      Request Body
-                    </FieldLabel>
-                    <Textarea
-                      className="min-h-[120px] font-mono text-sm"
-                      placeholder={
-                        '{\n  "userId": "{{httpResponse.data.id}}",\n  "name": "{{httpResponse.data.name}}",\n  "items": "{{httpResponse.data.items}}"\n}'
-                      }
-                      {...field}
-                    />
-                    <FieldDescription>
-                      JSON with template variables. Use {"{{variables}}"} for
-                      simple values or {"{{json variables}}"} to stringify
-                      objects
-                    </FieldDescription>
-                    {fieldState.invalid && (
-                      <FieldError errors={[fieldState.error]} />
-                    )}
-                  </Field>
-                )}
-              />
-            )}
+            <Controller
+              name="userPrompt"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-anthropic-user-prompt-textarea">
+                    User Prompt
+                  </FieldLabel>
+                  <Textarea
+                    className="min-h-[120px] font-mono text-sm"
+                    placeholder="Summarize this text: {{json httpResponse.data}}"
+                    {...field}
+                  />
+                  <FieldDescription>
+                    The prompt to send to the AI. Use {"{{variables}}"} for
+                    simple values or {"{{json variables}}"} to stringify objects
+                  </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
           </FieldGroup>
         </form>
         <Field orientation="horizontal">
           <DialogFooter className="mt-4 w-full">
-            <Button type="submit" form="form-http-request">
+            <Button type="submit" form="form-anthropic">
               Save
             </Button>
           </DialogFooter>
@@ -220,4 +231,4 @@ const HttpRequestDialog = ({
   );
 };
 
-export { HttpRequestDialog };
+export { AnthropicDialog };
