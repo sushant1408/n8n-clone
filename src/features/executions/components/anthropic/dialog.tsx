@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useGetCredentialsByType } from "@/features/credentials/hooks/use-credentials";
+import { CredentialType } from "@/generated/prisma";
 
 export const AVAILABLE_MODELS = [
   "claude-3-5-haiku-20241022",
@@ -55,6 +58,7 @@ const formSchema = z.object({
       error:
         "Variable name must start with a letter or underscore and contains only letters, numbers, and underscores",
     }),
+  credentialId: z.string().min(1, { error: "Credential is required" }),
   model: z.enum(AVAILABLE_MODELS),
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1, { error: "User prompt is required" }),
@@ -78,8 +82,12 @@ const AnthropicDialog = ({
     systemPrompt: "",
     userPrompt: "",
     variableName: "",
+    credentialId: "",
   },
 }: AnthropicDialogProps) => {
+  const { data: credentials, isLoading: isCredentialsLoading } =
+    useGetCredentialsByType(CredentialType.ANTHROPIC);
+
   const form = useForm<AnthropicFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
@@ -127,6 +135,49 @@ const AnthropicDialog = ({
                     Use this name to reference the result in other nodes:{" "}
                     {`{{${watchVariableName}.aiResponse}}`}
                   </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="credentialId"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-anthropic-select-credential-id">
+                    Anthropic Credential
+                  </FieldLabel>
+                  <Select
+                    name={field.name}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isCredentialsLoading || !credentials?.length}
+                  >
+                    <SelectTrigger
+                      id="form-anthropic-select-credential-id"
+                      aria-invalid={fieldState.invalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a credential" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {credentials?.map((credential) => (
+                        <SelectItem value={credential.id} key={credential.id}>
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src="/logos/anthropic.svg"
+                              alt={credential.name}
+                              width={16}
+                              height={16}
+                            />
+                            {credential.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}

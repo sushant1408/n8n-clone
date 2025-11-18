@@ -1,22 +1,10 @@
+import { credentialsRouter } from "@/features/credentials/server/routers";
 import { workflowsRouter } from "@/features/workflows/server/routers";
 import { createTRPCRouter } from "@/trpc/init";
 
 export const appRouter = createTRPCRouter({
   workflows: workflowsRouter,
-  // tastAi: protectedProcedure.mutation(async () => {
-  //   await inngest.send({ name: "execute/ai" });
-
-  //   return { success: true, message: "job queued" };
-  // }),
-  // getUsers: protectedProcedure.query(({ ctx }) => {
-  //   return prisma.user.findMany();
-  // }),
-  // getWorkflows: protectedProcedure.query(({ ctx }) => {
-  //   return prisma.workflow.findMany();
-  // }),
-  // createWorkflow: protectedProcedure.mutation(() => {
-  //   return prisma.workflow.create({ data: { name: "wf-1" } });
-  // }),
+  credentials: credentialsRouter,
 });
 
 // export type definition of API

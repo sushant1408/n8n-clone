@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useEffect } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
@@ -30,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useGetCredentialsByType } from "@/features/credentials/hooks/use-credentials";
+import { CredentialType } from "@/generated/prisma";
 
 export const AVAILABLE_MODELS = [
   "chatgpt-4o-latest",
@@ -78,6 +81,7 @@ const formSchema = z.object({
       error:
         "Variable name must start with a letter or underscore and contains only letters, numbers, and underscores",
     }),
+  credentialId: z.string().min(1, { error: "Credential is required" }),
   model: z.enum(AVAILABLE_MODELS),
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1, { error: "User prompt is required" }),
@@ -101,8 +105,12 @@ const OpenAiDialog = ({
     systemPrompt: "",
     userPrompt: "",
     variableName: "",
+    credentialId: "",
   },
 }: OpenAiDialogProps) => {
+  const { data: credentials, isLoading: isCredentialsLoading } =
+    useGetCredentialsByType(CredentialType.OPENAI);
+
   const form = useForm<OpenAiFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
@@ -126,7 +134,7 @@ const OpenAiDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Open AI Configuration</DialogTitle>
+          <DialogTitle>OpenAI Configuration</DialogTitle>
           <DialogDescription>
             Configure the AI model and prompts for this node.
           </DialogDescription>
@@ -150,6 +158,49 @@ const OpenAiDialog = ({
                     Use this name to reference the result in other nodes:{" "}
                     {`{{${watchVariableName}.aiResponse}}`}
                   </FieldDescription>
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+            <Controller
+              name="credentialId"
+              control={form.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor="form-openai-select-credential-id">
+                    OpenAI Credential
+                  </FieldLabel>
+                  <Select
+                    name={field.name}
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    disabled={isCredentialsLoading || !credentials?.length}
+                  >
+                    <SelectTrigger
+                      id="form-openai-select-credential-id"
+                      aria-invalid={fieldState.invalid}
+                      className="w-full"
+                    >
+                      <SelectValue placeholder="Select a credential" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {credentials?.map((credential) => (
+                        <SelectItem value={credential.id} key={credential.id}>
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src="/logos/openai.svg"
+                              alt={credential.name}
+                              width={16}
+                              height={16}
+                            />
+                            {credential.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
                   )}
@@ -185,7 +236,7 @@ const OpenAiDialog = ({
                     </SelectContent>
                   </Select>
                   <FieldDescription>
-                    The Open AI model to use for completion
+                    The OpenAI model to use for completion
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
