@@ -75,7 +75,7 @@ const OpenAiNode = memo((props: NodeProps<OpenAiNodeType>) => {
         {...props}
         id={props.id}
         icon="/logos/openai.svg"
-        name="Open AI"
+        name="OpenAI"
         description={description}
         status={nodeStatus}
         onSettings={handleOpenSettings}

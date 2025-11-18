@@ -67,8 +67,8 @@ const executionNodes: NodeTypeOption[] = [
   },
   {
     type: NodeType.OPENAI,
-    label: "Open AI",
-    description: "Use Open AI to generate text",
+    label: "OpenAI",
+    description: "Use OpenAI to generate text",
     icon: "/logos/openai.svg",
   },
 ];
