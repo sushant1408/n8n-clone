@@ -30,6 +30,7 @@ const openAiExecutor: NodeExecutor<OpenAiData> = async ({
   context,
   step,
   publish,
+  userId,
 }) => {
   await publish(openaiChannel().status({ nodeId, status: "loading" }));
 
@@ -59,7 +60,9 @@ const openAiExecutor: NodeExecutor<OpenAiData> = async ({
   const userPrompt = Handlebars.compile(data.userPrompt)(context);
 
   const credential = await step.run("get-credential", () => {
-    return prisma.credential.findUnique({ where: { id: data.credentialId } });
+    return prisma.credential.findUnique({
+      where: { id: data.credentialId, userId },
+    });
   });
 
   if (!credential) {
