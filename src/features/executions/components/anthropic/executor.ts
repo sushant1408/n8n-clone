@@ -30,6 +30,7 @@ const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
   context,
   step,
   publish,
+  userId,
 }) => {
   await publish(anthropicChannel().status({ nodeId, status: "loading" }));
 
@@ -59,7 +60,9 @@ const anthropicExecutor: NodeExecutor<AnthropicData> = async ({
   const userPrompt = Handlebars.compile(data.userPrompt)(context);
 
   const credential = await step.run("get-credential", () => {
-    return prisma.credential.findUnique({ where: { id: data.credentialId } });
+    return prisma.credential.findUnique({
+      where: { id: data.credentialId, userId },
+    });
   });
 
   if (!credential) {
