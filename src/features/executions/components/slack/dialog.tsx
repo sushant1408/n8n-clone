@@ -32,35 +32,30 @@ const formSchema = z.object({
       error:
         "Variable name must start with a letter or underscore and contains only letters, numbers, and underscores",
     }),
-  username: z.string().optional(),
-  content: z
-    .string()
-    .min(1, { error: "Message content is required" })
-    .max(2000, { error: "Discord message cannot exceed 2000 characters" }),
+  content: z.string().min(1, { error: "Message content is required" }),
   webhookUrl: z.string().min(1, { error: "Webhook URL is required" }),
 });
 
-export type DiscordFormValues = z.infer<typeof formSchema>;
+export type SlackFormValues = z.infer<typeof formSchema>;
 
-interface DiscordDialogProps {
+interface SlackDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (value: DiscordFormValues) => void;
-  initialValues?: Partial<DiscordFormValues>;
+  onSubmit: (value: SlackFormValues) => void;
+  initialValues?: Partial<SlackFormValues>;
 }
 
-const DiscordDialog = ({
+const SlackDialog = ({
   open,
   onOpenChange,
   onSubmit,
   initialValues = {
     variableName: "",
-    username: "",
     content: "",
     webhookUrl: "",
   },
-}: DiscordDialogProps) => {
-  const form = useForm<DiscordFormValues>({
+}: SlackDialogProps) => {
+  const form = useForm<SlackFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: initialValues,
   });
@@ -72,9 +67,9 @@ const DiscordDialog = ({
     }
   }, [open, initialValues, form]);
 
-  const watchVariableName = form.watch("variableName") || "myDiscord";
+  const watchVariableName = form.watch("variableName") || "mySlack";
 
-  const handleSubmit = (values: DiscordFormValues) => {
+  const handleSubmit = (values: SlackFormValues) => {
     onSubmit(values);
     onOpenChange(false);
   };
@@ -83,13 +78,13 @@ const DiscordDialog = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Discord Configuration</DialogTitle>
+          <DialogTitle>Slack Configuration</DialogTitle>
           <DialogDescription>
-            Configure the Discord webhook settings for this node.
+            Configure the Slack webhook settings for this node.
           </DialogDescription>
         </DialogHeader>
         <form
-          id="form-discord"
+          id="form-slack"
           className="space-y-8 mt-4"
           onSubmit={form.handleSubmit(handleSubmit)}
         >
@@ -99,10 +94,10 @@ const DiscordDialog = ({
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-discord-variable-name-input">
+                  <FieldLabel htmlFor="form-slack-variable-name-input">
                     Variable name
                   </FieldLabel>
-                  <Input placeholder="myDiscord" {...field} />
+                  <Input placeholder="mySlack" {...field} />
                   <FieldDescription>
                     Use this name to reference the result in other nodes:{" "}
                     {`{{${watchVariableName}.aiResponse}}`}
@@ -118,15 +113,15 @@ const DiscordDialog = ({
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-discord-webhook-url-input">
+                  <FieldLabel htmlFor="form-slack-webhook-url-input">
                     Webhook URL
                   </FieldLabel>
                   <Input
-                    placeholder="https://discord.com/api/webhook/..."
+                    placeholder="https://hooks.slack.com/triggers/..."
                     {...field}
                   />
                   <FieldDescription>
-                    Get this from Discord: Channel Settings -&gt; Integrations
+                    Get this from Slack: Workspace Settings -&gt; Workflows
                     -&gt; Webhooks
                   </FieldDescription>
                   {fieldState.invalid && (
@@ -140,7 +135,7 @@ const DiscordDialog = ({
               control={form.control}
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-discord-content-input">
+                  <FieldLabel htmlFor="form-slack-content-input">
                     Message Content
                   </FieldLabel>
                   <Textarea
@@ -151,23 +146,8 @@ const DiscordDialog = ({
                     The message to send. Use {"{{variables}}"} for simple values
                     or {"{{json variables}}"} to stringify objects
                   </FieldDescription>
-                  {fieldState.invalid && (
-                    <FieldError errors={[fieldState.error]} />
-                  )}
-                </Field>
-              )}
-            />
-            <Controller
-              name="username"
-              control={form.control}
-              render={({ field, fieldState }) => (
-                <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor="form-discord-username-input">
-                    Bot Username (optional)
-                  </FieldLabel>
-                  <Input placeholder="Workflow Bot" {...field} />
                   <FieldDescription>
-                    Override the webhook&apos;s default username
+                    Make sure you have "content" variable
                   </FieldDescription>
                   {fieldState.invalid && (
                     <FieldError errors={[fieldState.error]} />
@@ -179,7 +159,7 @@ const DiscordDialog = ({
         </form>
         <Field orientation="horizontal">
           <DialogFooter className="mt-4 w-full">
-            <Button type="submit" form="form-discord">
+            <Button type="submit" form="form-slack">
               Save
             </Button>
           </DialogFooter>
@@ -189,4 +169,4 @@ const DiscordDialog = ({
   );
 };
 
-export { DiscordDialog };
+export { SlackDialog };
