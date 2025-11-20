@@ -7,6 +7,7 @@ import type { NodeExecutor } from "@/features/executions/types";
 import type { Credential } from "@/generated/prisma";
 import { geminiChannel } from "@/inngest/channels/gemini";
 import prisma from "@/lib/db";
+import { decrypt } from "@/lib/encryption";
 import type { AVAILABLE_MODELS } from "./dialog";
 
 Handlebars.registerHelper("json", (context) => {
@@ -71,7 +72,7 @@ const geminiExecutor: NodeExecutor<GeminiData> = async ({
   }
 
   const google = createGoogleGenerativeAI({
-    apiKey: credential.value,
+    apiKey: decrypt(credential.value),
   });
 
   try {
