@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/components/ui/spinner";
-import { signUp } from "@/lib/auth-client";
+import { signIn, signUp } from "@/lib/auth-client";
 
 const registerSchema = z
   .object({
@@ -71,6 +71,38 @@ const RegisterForm = () => {
     );
   };
 
+  const signInGithub = async () => {
+    await signIn.social(
+      {
+        provider: "github",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: () => {
+          toast.error("Something went wrong");
+        },
+      }
+    );
+  };
+
+  const signInGoogle = async () => {
+    await signIn.social(
+      {
+        provider: "google",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: () => {
+          toast.error("Something went wrong");
+        },
+      }
+    );
+  };
+
   const isSubmitting = form.formState.isSubmitting;
 
   return (
@@ -87,6 +119,7 @@ const RegisterForm = () => {
                 <Button
                   variant="outline"
                   type="button"
+                  onClick={signInGithub}
                   disabled={isSubmitting}
                   className="w-full"
                 >
@@ -96,6 +129,7 @@ const RegisterForm = () => {
                 <Button
                   variant="outline"
                   type="button"
+                  onClick={signInGoogle}
                   disabled={isSubmitting}
                   className="w-full"
                 >

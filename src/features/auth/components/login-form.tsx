@@ -62,6 +62,38 @@ const LoginForm = () => {
     );
   };
 
+  const signInGithub = async () => {
+    await signIn.social(
+      {
+        provider: "github",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: () => {
+          toast.error("Something went wrong");
+        },
+      }
+    );
+  };
+
+  const signInGoogle = async () => {
+    await signIn.social(
+      {
+        provider: "google",
+      },
+      {
+        onSuccess: () => {
+          router.push("/");
+        },
+        onError: () => {
+          toast.error("Something went wrong");
+        },
+      }
+    );
+  };
+
   const isSubmitting = form.formState.isSubmitting;
 
   return (
@@ -78,6 +110,7 @@ const LoginForm = () => {
                 <Button
                   variant="outline"
                   type="button"
+                  onClick={signInGithub}
                   disabled={isSubmitting}
                   className="w-full"
                 >
@@ -87,6 +120,7 @@ const LoginForm = () => {
                 <Button
                   variant="outline"
                   type="button"
+                  onClick={signInGoogle}
                   disabled={isSubmitting}
                   className="w-full"
                 >

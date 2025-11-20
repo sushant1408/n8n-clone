@@ -3,11 +3,8 @@
 import { formatDistanceToNow } from "date-fns";
 import { CheckCircle2Icon, ClockIcon, XCircleIcon } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useState } from "react";
 
-import { Spinner } from "@/components/ui/spinner";
-import { type Execution, ExecutionStatus } from "@/generated/prisma";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,7 +18,9 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Spinner } from "@/components/ui/spinner";
 import { useSuspenseExecution } from "@/features/workflow-executions/hooks/use-workflow-executions";
+import { type Execution, ExecutionStatus } from "@/generated/prisma";
 
 const getStatusIcon = (status: Execution["status"]) => {
   switch (status) {
